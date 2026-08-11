@@ -1,0 +1,39 @@
+:root {
+  --app-background: #f6f7fb;
+  --app-surface: #ffffff;
+  --app-surface-alt: #f1f3f8;
+
+  --app-text: #101828;
+  --app-text-secondary: #667085;
+  --app-border: #e4e7ec;
+
+  --app-radius-sm: 8px;
+  --app-radius-md: 12px;
+  --app-radius-lg: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__nuxt {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--app-text);
+  background: var(--app-background);
+  font-family: "Inter Variable", "Vazirmatn Variable", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

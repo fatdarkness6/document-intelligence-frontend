@@ -1,3 +1,5 @@
 <template>
-  <RouterView></RouterView>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
