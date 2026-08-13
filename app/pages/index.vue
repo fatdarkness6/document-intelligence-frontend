@@ -4,62 +4,32 @@ import LandingFooter from "~/components/landing/LandingFooter.vue";
 definePageMeta({
   layout: "public",
 });
-
-const authStore = useAuthStore();
 </script>
 
 <template>
-  <NuxtLayout name="public">
-    <template #header-actions>
-      <div class="row items-center q-gutter-sm">
-        <q-btn
-          v-if="authStore.isAuthenticated"
-          color="primary"
-          unelevated
-          no-caps
-          icon="dashboard"
-          label="Dashboard"
-          to="/dashboard"
-        />
+  <q-page class="landing-page">
+    <LandingHeroSection />
 
-        <template v-else>
-          <q-btn flat no-caps label="Sign in" to="/login" />
+    <LandingSupportedFormats />
 
-          <q-btn
-            color="primary"
-            unelevated
-            no-caps
-            label="Create account"
-            to="/register"
-          />
-        </template>
-      </div>
-    </template>
+    <LandingFeaturesSection />
 
-    <q-page class="landing-page">
-      <LandingHeroSection />
+    <LandingProductShowcase />
 
-      <LandingSupportedFormats />
+    <LandingHowItWorks />
 
-      <LandingFeaturesSection />
+    <LandingSpreadsheetSection />
 
-      <LandingProductShowcase />
+    <LandingChatCitationsSection />
 
-      <LandingHowItWorks />
+    <LandingOrganizationSection />
 
-      <LandingSpreadsheetSection />
+    <LandingSecuritySection />
 
-      <LandingChatCitationsSection />
+    <LandingFinalCta />
 
-      <LandingOrganizationSection />
-
-      <LandingSecuritySection />
-
-      <LandingFinalCta />
-
-      <LandingFooter />
-    </q-page>
-  </NuxtLayout>
+    <LandingFooter />
+  </q-page>
 </template>
 
 <style scoped>

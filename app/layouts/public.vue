@@ -1,6 +1,10 @@
+<script setup lang="ts">
+const authStore = useAuthStore();
+</script>
+
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header bordered class="bg-white text-dark">
+    <q-header bordered class="app-shell-surface app-shell-text">
       <q-toolbar class="public-toolbar">
         <!-- Left -->
         <div class="header-left">
@@ -18,7 +22,27 @@
 
         <!-- Right -->
         <div class="header-right">
-          <slot name="header-actions" />
+          <q-btn
+            v-if="authStore.isAuthenticated"
+            color="primary"
+            unelevated
+            no-caps
+            icon="dashboard"
+            label="Dashboard"
+            to="/dashboard"
+          />
+
+          <div v-else class="row items-center q-gutter-sm">
+            <q-btn flat no-caps label="Sign in" to="/login" />
+
+            <q-btn
+              color="primary"
+              unelevated
+              no-caps
+              label="Create account"
+              to="/register"
+            />
+          </div>
         </div>
       </q-toolbar>
     </q-header>

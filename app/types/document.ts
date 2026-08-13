@@ -1,3 +1,5 @@
+import type { Tag } from "~/types/tag";
+
 export interface DocumentStats {
   total_documents: number;
   pdf_documents: number;
@@ -21,7 +23,7 @@ export interface Document {
   summary: string | null;
   is_favorite: boolean;
   folder_id: number | null;
-  tags: unknown[];
+  tags: Tag[];
 }
 
 export interface PaginatedResponse<T> {

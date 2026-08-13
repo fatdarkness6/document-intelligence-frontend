@@ -12,6 +12,16 @@
   --app-radius-lg: 16px;
 }
 
+.body--dark {
+  --app-background: #0b1020;
+  --app-surface: #151b2d;
+  --app-surface-alt: #1d2539;
+
+  --app-text: #f4f6fb;
+  --app-text-secondary: #aab3c5;
+  --app-border: #2b354c;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -29,6 +39,43 @@ body {
   font-family: "Inter Variable", "Vazirmatn Variable", Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
+}
+
+.q-layout,
+.q-page-container {
+  background: var(--app-background);
+}
+
+.app-shell-surface {
+  background: var(--app-surface) !important;
+}
+
+.app-shell-text {
+  color: var(--app-text) !important;
+}
+
+.body--dark {
+  .bg-white,
+  .bg-grey-1,
+  .bg-grey-2 {
+    background: var(--app-surface) !important;
+  }
+
+  .text-dark,
+  .text-grey-8 {
+    color: var(--app-text) !important;
+  }
+
+  .text-grey-7 {
+    color: var(--app-text-secondary) !important;
+  }
+
+  .q-card--bordered,
+  .q-list--bordered,
+  .q-table__card,
+  .q-field--outlined .q-field__control::before {
+    border-color: var(--app-border);
+  }
 }
 
 button,

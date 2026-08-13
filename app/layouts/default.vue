@@ -5,10 +5,12 @@ const route = useRoute();
 const drawerOpen = ref(true);
 
 const authStore = useAuthStore();
+const { compactNavigation } = useAppPreferences();
 
 const navItems = [
   { label: "Dashboard", icon: "dashboard", to: "/dashboard" },
   { label: "Documents", icon: "description", to: "/documents" },
+  { label: "Settings", icon: "settings", to: "/settings" },
 ];
 
 async function handleLogout() {
@@ -27,7 +29,7 @@ watch(
 
 <template>
   <q-layout view="hHh Lpr lFf">
-    <q-header bordered class="bg-white text-dark">
+    <q-header bordered class="app-shell-surface app-shell-text">
       <q-toolbar>
         <q-btn
           flat
@@ -57,6 +59,16 @@ watch(
 
               <q-separator />
 
+              <q-item clickable to="/settings" v-close-popup>
+                <q-item-section avatar>
+                  <q-icon name="settings" />
+                </q-item-section>
+
+                <q-item-section> Settings </q-item-section>
+              </q-item>
+
+              <q-separator />
+
               <q-item clickable v-close-popup @click="handleLogout">
                 <q-item-section avatar>
                   <q-icon name="logout" />
@@ -75,10 +87,17 @@ watch(
       show-if-above
       bordered
       :width="260"
+      :mini="compactNavigation && $q.screen.gt.sm"
+      :mini-width="80"
       :breakpoint="1024"
-      class="bg-white"
+      class="app-shell-surface app-shell-text"
     >
-      <div class="q-pa-lg text-h6 text-weight-bold">DocIntel</div>
+      <div
+        class="q-pa-lg text-h6 text-weight-bold"
+        :class="{ 'text-center q-px-sm': compactNavigation && $q.screen.gt.sm }"
+      >
+        {{ compactNavigation && $q.screen.gt.sm ? "DI" : "DocIntel" }}
+      </div>
 
       <q-list padding>
         <q-item
