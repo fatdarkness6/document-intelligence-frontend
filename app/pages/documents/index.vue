@@ -1,15 +1,15 @@
 <script setup lang="ts">
-definePageMeta({
-  middleware: "auth",
-});
+definePageMeta({ middleware: "auth" });
 
+useSeoMeta({ title: "Documents | DocIntel" });
+
+const $q = useQuasar();
 const documentsApi = useDocuments();
 const foldersApi = useFolders();
 const tagsApi = useTags();
 
 const page = ref(1);
-const perPage = 10;
-
+const perPage = 12;
 const search = ref("");
 const debouncedSearch = ref("");
 const favoriteOnly = ref(false);
@@ -24,7 +24,6 @@ let processingTimer: ReturnType<typeof setInterval> | null = null;
 
 watch(search, (value) => {
   clearTimeout(searchTimer);
-
   searchTimer = setTimeout(() => {
     page.value = 1;
     debouncedSearch.value = value?.trim() ?? "";
@@ -33,10 +32,6 @@ watch(search, (value) => {
 
 watch([favoriteOnly, selectedFolder, selectedTag], () => {
   page.value = 1;
-});
-
-onBeforeUnmount(() => {
-  clearTimeout(searchTimer);
 });
 
 const {
@@ -55,9 +50,7 @@ const {
       page: page.value,
       per_page: perPage,
     }),
-  {
-    watch: [page, debouncedSearch, favoriteOnly, selectedFolder, selectedTag],
-  },
+  { watch: [page, debouncedSearch, favoriteOnly, selectedFolder, selectedTag] },
 );
 
 const { data: folders, refresh: refreshFolders } = await useAsyncData(
@@ -69,19 +62,53 @@ const { data: tags, refresh: refreshTags } = await useAsyncData("tags", () =>
   tagsApi.getTags(),
 );
 
-const hasProcessingDocuments = computed(() =>
-  documents.value?.items.some((document) => document.status === "processing"),
+const hasActiveFilters = computed(
+  () =>
+    Boolean(debouncedSearch.value) ||
+    favoriteOnly.value ||
+    selectedFolder.value !== null ||
+    selectedTag.value !== null,
 );
+
+const processingCount = computed(
+  () =>
+    documents.value?.items.filter((document) => document.status === "processing")
+      .length ?? 0,
+);
+
+const favoriteCount = computed(
+  () =>
+    documents.value?.items.filter((document) => document.is_favorite).length ?? 0,
+);
+
+const hasProcessingDocuments = computed(() => processingCount.value > 0);
+
+function clearFilters() {
+  search.value = "";
+  debouncedSearch.value = "";
+  favoriteOnly.value = false;
+  selectedFolder.value = null;
+  selectedTag.value = null;
+  page.value = 1;
+}
+
+function clearSearch() {
+  search.value = "";
+  debouncedSearch.value = "";
+}
+
+function stopProcessingPolling() {
+  if (!processingTimer) return;
+  clearInterval(processingTimer);
+  processingTimer = null;
+}
 
 function startProcessingPolling() {
   if (processingTimer) return;
 
   processingTimer = setInterval(async () => {
     await refresh();
-
-    if (!hasProcessingDocuments.value) {
-      stopProcessingPolling();
-    }
+    if (!hasProcessingDocuments.value) stopProcessingPolling();
   }, 3000);
 }
 
@@ -95,178 +122,96 @@ async function handleTagsChanged() {
   await refreshTags();
 }
 
-function stopProcessingPolling() {
-  if (!processingTimer) return;
-
-  clearInterval(processingTimer);
-  processingTimer = null;
+async function handleUploaded() {
+  page.value = 1;
+  await refresh();
 }
 
 watch(
   hasProcessingDocuments,
   (hasProcessing) => {
-    if (hasProcessing) {
-      startProcessingPolling();
-    } else {
-      stopProcessingPolling();
-    }
+    if (hasProcessing) startProcessingPolling();
+    else stopProcessingPolling();
   },
   { immediate: true },
 );
 
 onBeforeUnmount(() => {
+  clearTimeout(searchTimer);
   stopProcessingPolling();
 });
 </script>
 
 <template>
-  <q-page class="q-pa-md">
-    <!-- Header -->
-    <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
-      <div class="col-12 col-md">
-        <div class="text-h4 text-weight-bold">Documents</div>
+  <q-page :class="$q.screen.lt.sm ? 'q-pa-sm' : 'q-pa-lg'">
+    <div class="documents-container q-mx-auto">
+      <DocumentsLibraryHeader
+        :document-count="documents?.total ?? 0"
+        :folder-count="folders?.length ?? 0"
+        :favorite-count="favoriteCount"
+        :processing-count="processingCount"
+        :filtered="hasActiveFilters"
+        @manage-folders="folderManagerOpen = true"
+        @manage-tags="tagManagerOpen = true"
+        @upload="uploadDialogOpen = true"
+      />
 
-        <div class="text-grey-7 q-mt-xs">
-          Manage and explore your documents.
-        </div>
-      </div>
+      <DocumentsFiltersPanel
+        v-model:search="search"
+        v-model:folder="selectedFolder"
+        v-model:tag="selectedTag"
+        v-model:favorite="favoriteOnly"
+        :active-search="debouncedSearch"
+        :folders="folders ?? []"
+        :tags="tags ?? []"
+        :has-active-filters="hasActiveFilters"
+        class="q-mt-lg"
+        @clear="clearFilters"
+        @clear-search="clearSearch"
+      />
 
-      <div class="col-12 col-md-auto">
-        <div class="row q-gutter-sm">
-          <q-btn
-            flat
-            icon="folder"
-            label="Manage folders"
-            no-caps
-            @click="folderManagerOpen = true"
-          />
-
-          <q-btn
-            flat
-            icon="label"
-            label="Manage tags"
-            no-caps
-            @click="tagManagerOpen = true"
-          />
-
-          <q-btn
-            color="primary"
-            icon="upload_file"
-            label="Upload"
-            unelevated
-            no-caps
-            @click="uploadDialogOpen = true"
-          />
-        </div>
-      </div>
+      <DocumentsLibraryContent
+        v-model:page="page"
+        :documents="documents"
+        :folders="folders ?? []"
+        :pending="pending"
+        :has-error="Boolean(error)"
+        :has-active-filters="hasActiveFilters"
+        class="q-mt-lg"
+        @retry="refresh"
+        @clear-filters="clearFilters"
+        @upload="uploadDialogOpen = true"
+      />
     </div>
 
-    <!-- Filters -->
-    <div class="row q-col-gutter-md items-center q-mb-lg">
-      <div class="col-12 col-md">
-        <q-input
-          v-model="search"
-          outlined
-          clearable
-          placeholder="Search documents..."
-        >
-          <template #prepend>
-            <q-icon name="search" />
-          </template>
-        </q-input>
-      </div>
+    <q-page-sticky
+      v-if="$q.screen.lt.sm"
+      position="bottom-right"
+      :offset="[16, 16]"
+    >
+      <q-btn
+        fab
+        color="primary"
+        icon="upload_file"
+        aria-label="Upload document"
+        @click="uploadDialogOpen = true"
+      />
+    </q-page-sticky>
 
-      <div class="col-12 col-sm-6 col-md-auto">
-        <q-select
-          v-model="selectedFolder"
-          :options="folders ?? []"
-          option-label="name"
-          option-value="id"
-          emit-value
-          map-options
-          clearable
-          outlined
-          label="Folder"
-          style="min-width: 180px"
-        />
-      </div>
-
-      <div class="col-12 col-sm-6 col-md-auto">
-        <q-select
-          v-model="selectedTag"
-          :options="tags ?? []"
-          option-label="name"
-          option-value="id"
-          emit-value
-          map-options
-          clearable
-          outlined
-          label="Tag"
-          style="min-width: 180px"
-        />
-      </div>
-
-      <div class="col-12 col-md-auto">
-        <q-toggle
-          v-model="favoriteOnly"
-          label="Favorites only"
-          icon="star"
-          color="amber"
-        />
-      </div>
-    </div>
-
-    <!-- Loading -->
-    <CommonLoadingState v-if="pending" :rows="5" />
-
-    <!-- Error -->
-    <q-banner v-else-if="error" rounded class="bg-red-1 text-negative">
-      Failed to load documents.
-
-      <template #action>
-        <q-btn flat color="negative" label="Retry" @click="refresh" />
-      </template>
-    </q-banner>
-
-    <!-- Empty -->
-    <CommonEmptyState
-      v-else-if="!documents?.items.length"
-      icon="description"
-      title="No documents found"
-      description="Upload a document or change your filters."
-      action-label="Upload document"
-      @action="uploadDialogOpen = true"
-    />
-
-    <!-- Documents -->
-    <template v-else>
-      <q-list bordered separator>
-        <DocumentsDocumentListItem
-          v-for="document in documents.items"
-          :key="document.id"
-          :document="document"
-        />
-      </q-list>
-
-      <!-- Pagination -->
-      <div v-if="documents.total_pages > 1" class="flex justify-center q-mt-lg">
-        <q-pagination
-          v-model="page"
-          :max="documents.total_pages"
-          direction-links
-          boundary-links
-        />
-      </div>
-    </template>
     <FoldersFolderManagerDialog
       v-model="folderManagerOpen"
       @changed="handleFoldersChanged"
     />
-
-    <TagsTagManagerDialog
-      v-model="tagManagerOpen"
-      @changed="handleTagsChanged"
+    <TagsTagManagerDialog v-model="tagManagerOpen" @changed="handleTagsChanged" />
+    <DocumentsUploadDialog
+      v-model="uploadDialogOpen"
+      @uploaded="handleUploaded"
     />
-    <DocumentsUploadDialog v-model="uploadDialogOpen" @uploaded="refresh" />
   </q-page>
 </template>
+
+<style scoped>
+.documents-container {
+  width: min(100%, 1440px);
+}
+</style>
