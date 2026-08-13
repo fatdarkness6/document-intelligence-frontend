@@ -9,7 +9,6 @@ const authStore = useAuthStore();
 const navItems = [
   { label: "Dashboard", icon: "dashboard", to: "/dashboard" },
   { label: "Documents", icon: "description", to: "/documents" },
-  { label: "Favorites", icon: "star", to: "/favorites" },
 ];
 
 async function handleLogout() {

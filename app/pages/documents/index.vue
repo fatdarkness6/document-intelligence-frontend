@@ -16,6 +16,8 @@ const favoriteOnly = ref(false);
 const selectedFolder = ref<number | null>(null);
 const selectedTag = ref<number | null>(null);
 const uploadDialogOpen = ref(false);
+const folderManagerOpen = ref(false);
+const tagManagerOpen = ref(false);
 
 let searchTimer: ReturnType<typeof setTimeout>;
 let processingTimer: ReturnType<typeof setInterval> | null = null;
@@ -58,11 +60,14 @@ const {
   },
 );
 
-const { data: folders } = await useAsyncData("folders", () =>
-  foldersApi.getFolders(),
+const { data: folders, refresh: refreshFolders } = await useAsyncData(
+  "folders",
+  () => foldersApi.getFolders(),
 );
 
-const { data: tags } = await useAsyncData("tags", () => tagsApi.getTags());
+const { data: tags, refresh: refreshTags } = await useAsyncData("tags", () =>
+  tagsApi.getTags(),
+);
 
 const hasProcessingDocuments = computed(() =>
   documents.value?.items.some((document) => document.status === "processing"),
@@ -78,6 +83,16 @@ function startProcessingPolling() {
       stopProcessingPolling();
     }
   }, 3000);
+}
+
+async function handleFoldersChanged() {
+  selectedFolder.value = null;
+  await refreshFolders();
+}
+
+async function handleTagsChanged() {
+  selectedTag.value = null;
+  await refreshTags();
 }
 
 function stopProcessingPolling() {
@@ -107,23 +122,43 @@ onBeforeUnmount(() => {
 <template>
   <q-page class="q-pa-md">
     <!-- Header -->
-    <div class="row items-center justify-between q-mb-lg">
-      <div>
+    <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
+      <div class="col-12 col-md">
         <div class="text-h4 text-weight-bold">Documents</div>
 
         <div class="text-grey-7 q-mt-xs">
           Manage and explore your documents.
         </div>
       </div>
-      <DocumentsUploadDialog v-model="uploadDialogOpen" @uploaded="refresh" />
-      <q-btn
-        color="primary"
-        icon="upload_file"
-        label="Upload"
-        unelevated
-        no-caps
-        @click="uploadDialogOpen = true"
-      />
+
+      <div class="col-12 col-md-auto">
+        <div class="row q-gutter-sm">
+          <q-btn
+            flat
+            icon="folder"
+            label="Manage folders"
+            no-caps
+            @click="folderManagerOpen = true"
+          />
+
+          <q-btn
+            flat
+            icon="label"
+            label="Manage tags"
+            no-caps
+            @click="tagManagerOpen = true"
+          />
+
+          <q-btn
+            color="primary"
+            icon="upload_file"
+            label="Upload"
+            unelevated
+            no-caps
+            @click="uploadDialogOpen = true"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -182,9 +217,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Loading -->
-    <div v-if="pending" class="q-gutter-md">
-      <q-skeleton v-for="item in 5" :key="item" type="rect" height="72px" />
-    </div>
+    <CommonLoadingState v-if="pending" :rows="5" />
 
     <!-- Error -->
     <q-banner v-else-if="error" rounded class="bg-red-1 text-negative">
@@ -196,18 +229,14 @@ onBeforeUnmount(() => {
     </q-banner>
 
     <!-- Empty -->
-    <div
+    <CommonEmptyState
       v-else-if="!documents?.items.length"
-      class="column items-center justify-center q-py-xl text-center"
-    >
-      <q-icon name="description" size="64px" color="grey-5" />
-
-      <div class="text-h6 q-mt-md">No documents found</div>
-
-      <div class="text-grey-7 q-mt-xs">
-        Upload a document or change your filters.
-      </div>
-    </div>
+      icon="description"
+      title="No documents found"
+      description="Upload a document or change your filters."
+      action-label="Upload document"
+      @action="uploadDialogOpen = true"
+    />
 
     <!-- Documents -->
     <template v-else>
@@ -229,5 +258,15 @@ onBeforeUnmount(() => {
         />
       </div>
     </template>
+    <FoldersFolderManagerDialog
+      v-model="folderManagerOpen"
+      @changed="handleFoldersChanged"
+    />
+
+    <TagsTagManagerDialog
+      v-model="tagManagerOpen"
+      @changed="handleTagsChanged"
+    />
+    <DocumentsUploadDialog v-model="uploadDialogOpen" @uploaded="refresh" />
   </q-page>
 </template>

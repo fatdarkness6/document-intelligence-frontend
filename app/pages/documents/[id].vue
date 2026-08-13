@@ -6,10 +6,13 @@ definePageMeta({
 const route = useRoute();
 const documentsApi = useDocuments();
 const feedback = useAppFeedback();
+const analysisApi = useDocumentAnalysis();
 
 const renameDialogOpen = ref(false);
 const newFilename = ref("");
-const actionLoading = ref(false);
+const renameLoading = ref(false);
+const reprocessLoading = ref(false);
+const deleteLoading = ref(false);
 const foldersApi = useFolders();
 const selectedFolder = ref<number | null>(null);
 const folderLoading = ref(false);
@@ -35,22 +38,40 @@ const {
 );
 
 async function handleAskQuestion() {
-  if (!question.value.trim()) return;
+  const askedQuestion = question.value.trim();
+
+  if (!askedQuestion) return;
 
   asking.value = true;
 
   try {
-    await documentChat.askQuestion(documentId, question.value.trim());
+    const response = await documentChat.askQuestion(documentId, askedQuestion);
 
     question.value = "";
 
     await refreshQuestions();
+
+    // Find the newly stored question
+    const currentQuestion = (questions.value ?? [])
+      .filter((item) => item.question === askedQuestion)
+      .sort((a, b) => b.id - a.id)[0];
+
+    if (currentQuestion) {
+      currentQuestion.sources = response.sources;
+    }
   } catch (error) {
     feedback.error(normalizeApiError(error).message);
   } finally {
     asking.value = false;
   }
 }
+
+function formatNumber(value: number | null) {
+  if (value === null) return "—";
+
+  return Number(value.toFixed(2)).toLocaleString();
+}
+
 function openRenameDialog() {
   if (!document.value) return;
 
@@ -61,7 +82,7 @@ function openRenameDialog() {
 async function handleRename() {
   if (!document.value || !newFilename.value.trim()) return;
 
-  actionLoading.value = true;
+  renameLoading.value = true;
 
   try {
     await documentsApi.renameDocument(
@@ -76,7 +97,7 @@ async function handleRename() {
   } catch (error) {
     feedback.error(normalizeApiError(error).message);
   } finally {
-    actionLoading.value = false;
+    renameLoading.value = false;
   }
 }
 
@@ -95,7 +116,7 @@ async function handleFavorite() {
   }
 }
 
-async function handleDelete() {
+function handleDelete() {
   if (!document.value) return;
 
   feedback
@@ -104,6 +125,8 @@ async function handleDelete() {
       message: "This action cannot be undone.",
     })
     .onOk(async () => {
+      deleteLoading.value = true;
+
       try {
         await documentsApi.deleteDocument(document.value!.id);
 
@@ -111,6 +134,8 @@ async function handleDelete() {
         await navigateTo("/documents");
       } catch (error) {
         feedback.error(normalizeApiError(error).message);
+      } finally {
+        deleteLoading.value = false;
       }
     });
 }
@@ -118,7 +143,7 @@ async function handleDelete() {
 async function handleReprocess() {
   if (!document.value) return;
 
-  actionLoading.value = true;
+  reprocessLoading.value = true;
 
   try {
     await documentsApi.reprocessDocument(document.value.id);
@@ -128,7 +153,7 @@ async function handleReprocess() {
   } catch (error) {
     feedback.error(normalizeApiError(error).message);
   } finally {
-    actionLoading.value = false;
+    reprocessLoading.value = false;
   }
 }
 
@@ -267,6 +292,48 @@ const {
 } = await useAsyncData(`document-${documentId}-questions`, () =>
   documentChat.getQuestions(documentId),
 );
+
+const isSpreadsheet = computed(() => {
+  const type = document.value?.file_type?.toLowerCase();
+
+  return type === "csv" || type === "xlsx";
+});
+
+const {
+  data: analysis,
+  pending: analysisPending,
+  error: analysisError,
+  refresh: refreshAnalysis,
+} = await useAsyncData(
+  `document-${documentId}-analysis`,
+  () => analysisApi.getAnalysis(documentId),
+  {
+    immediate: false,
+  },
+);
+
+const {
+  data: insights,
+  pending: insightsPending,
+  error: insightsError,
+  refresh: refreshInsights,
+} = await useAsyncData(
+  `document-${documentId}-insights`,
+  () => analysisApi.getInsights(documentId),
+  {
+    immediate: false,
+  },
+);
+
+watch(
+  isSpreadsheet,
+  async (value) => {
+    if (!value) return;
+
+    await Promise.all([refreshAnalysis(), refreshInsights()]);
+  },
+  { immediate: true },
+);
 onBeforeUnmount(() => {
   stopProcessingPolling();
 });
@@ -274,8 +341,14 @@ onBeforeUnmount(() => {
 
 <template>
   <q-page class="q-pa-md">
-    <div class="row items-center q-gutter-sm">
-      <q-btn flat round icon="edit" @click="openRenameDialog" />
+    <div class="row items-center q-gutter-sm q-mb-md">
+      <q-btn
+        flat
+        round
+        icon="edit"
+        @click="openRenameDialog"
+        aria-label="Rename document"
+      />
 
       <q-btn
         flat
@@ -283,6 +356,9 @@ onBeforeUnmount(() => {
         :icon="document.is_favorite ? 'star' : 'star_border'"
         color="amber"
         @click="handleFavorite"
+        :aria-label="
+          document.is_favorite ? 'Remove from favorites' : 'Add to favorites'
+        "
       />
 
       <q-btn
@@ -290,11 +366,20 @@ onBeforeUnmount(() => {
         round
         icon="refresh"
         color="primary"
-        :loading="actionLoading"
+        :loading="reprocessLoading"
         @click="handleReprocess"
+        aria-label="Reprocess document"
       />
 
-      <q-btn flat round icon="delete" color="negative" @click="handleDelete" />
+      <q-btn
+        flat
+        round
+        icon="delete"
+        color="negative"
+        :loading="deleteLoading"
+        @click="handleDelete"
+        aria-label="Delete document"
+      />
       <q-btn
         flat
         round
@@ -302,6 +387,7 @@ onBeforeUnmount(() => {
         color="primary"
         :loading="reportLoading"
         @click="handleDownloadReport"
+        aria-label="Delete document"
       />
 
       <q-chip
@@ -326,9 +412,7 @@ onBeforeUnmount(() => {
 
       <q-card-section>
         <!-- History loading -->
-        <div v-if="questionsPending">
-          <q-skeleton v-for="item in 3" :key="item" type="text" />
-        </div>
+        <CommonLoadingState v-if="questionsPending" :rows="3" height="48px" />
 
         <!-- History error -->
         <q-banner
@@ -349,12 +433,12 @@ onBeforeUnmount(() => {
         </q-banner>
 
         <!-- Empty -->
-        <div
+        <CommonEmptyState
           v-else-if="!questions?.length && !asking"
-          class="text-grey-7 text-center q-py-lg"
-        >
-          No questions yet.
-        </div>
+          icon="forum"
+          title="No questions yet"
+          description="Ask something about this document to start the conversation."
+        />
 
         <!-- Conversation -->
         <div v-else class="column">
@@ -375,6 +459,31 @@ onBeforeUnmount(() => {
               bg-color="grey-2"
               text-color="dark"
             />
+            <q-expansion-item
+              v-if="item.sources?.length"
+              icon="menu_book"
+              :label="`Sources (${item.sources.length})`"
+              dense
+              class="q-mb-md"
+            >
+              <q-list bordered separator class="rounded-borders">
+                <q-item v-for="source in item.sources" :key="source.chunk_id">
+                  <q-item-section>
+                    <q-item-label class="text-weight-medium">
+                      {{
+                        source.page_number
+                          ? `Page ${source.page_number}`
+                          : `Chunk ${source.chunk_index + 1}`
+                      }}
+                    </q-item-label>
+
+                    <q-item-label caption lines="3">
+                      {{ source.preview }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-expansion-item>
           </template>
 
           <!-- AI thinking -->
@@ -448,7 +557,7 @@ onBeforeUnmount(() => {
             color="primary"
             label="Save"
             unelevated
-            :loading="actionLoading"
+            :loading="renameLoading"
             @click="handleRename"
           />
         </q-card-actions>
@@ -573,6 +682,211 @@ onBeforeUnmount(() => {
           <div v-else class="text-grey-7">No summary available yet.</div>
         </q-card-section>
       </q-card>
+      <!-- Spreadsheet Analysis -->
+      <q-card v-if="isSpreadsheet" flat bordered class="q-mt-md">
+        <q-card-section>
+          <div class="text-h6">Spreadsheet Analysis</div>
+        </q-card-section>
+
+        <q-separator />
+
+        <!-- Loading -->
+        <CommonLoadingState v-if="analysisPending" :rows="3" height="100px" />
+
+        <!-- Error -->
+        <q-card-section v-else-if="analysisError">
+          <q-banner rounded class="bg-red-1 text-negative">
+            Failed to load spreadsheet analysis.
+
+            <template #action>
+              <q-btn
+                flat
+                color="negative"
+                label="Retry"
+                @click="refreshAnalysis"
+              />
+            </template>
+          </q-banner>
+        </q-card-section>
+
+        <!-- Analysis -->
+        <template v-else-if="analysis">
+          <!-- Rows / Columns -->
+          <q-card-section>
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-sm-6">
+                <q-card flat bordered class="q-pa-md">
+                  <div class="text-grey-7">Rows</div>
+
+                  <div class="text-h4 text-weight-bold">
+                    {{ analysis.rows }}
+                  </div>
+                </q-card>
+              </div>
+
+              <div class="col-12 col-sm-6">
+                <q-card flat bordered class="q-pa-md">
+                  <div class="text-grey-7">Columns</div>
+
+                  <div class="text-h4 text-weight-bold">
+                    {{ analysis.columns }}
+                  </div>
+                </q-card>
+              </div>
+            </div>
+          </q-card-section>
+
+          <!-- Column information -->
+          <q-card-section>
+            <div class="text-subtitle1 text-weight-medium q-mb-md">Columns</div>
+
+            <q-markup-table flat bordered wrap-cells>
+              <thead>
+                <tr>
+                  <th class="text-left">Column</th>
+                  <th class="text-left">Type</th>
+                  <th class="text-right">Missing values</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr v-for="column in analysis.column_info" :key="column.name">
+                  <td class="text-left text-weight-medium">
+                    {{ column.name }}
+                  </td>
+
+                  <td class="text-left">
+                    <q-chip dense>
+                      {{ column.type }}
+                    </q-chip>
+                  </td>
+
+                  <td class="text-right">
+                    <span
+                      :class="
+                        column.missing_values > 0
+                          ? 'text-negative text-weight-medium'
+                          : 'text-positive'
+                      "
+                    >
+                      {{ column.missing_values }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </q-markup-table>
+          </q-card-section>
+
+          <!-- Numeric statistics -->
+          <q-card-section>
+            <div class="text-subtitle1 text-weight-medium q-mb-md">
+              Numeric Statistics
+            </div>
+
+            <q-markup-table flat bordered wrap-cells>
+              <thead>
+                <tr>
+                  <th class="text-left">Column</th>
+                  <th class="text-right">Count</th>
+                  <th class="text-right">Mean</th>
+                  <th class="text-right">Std</th>
+                  <th class="text-right">Min</th>
+                  <th class="text-right">25%</th>
+                  <th class="text-right">50%</th>
+                  <th class="text-right">75%</th>
+                  <th class="text-right">Max</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="(stats, name) in analysis.numeric_summary"
+                  :key="name"
+                >
+                  <td class="text-left text-weight-medium">
+                    {{ name }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ stats.count }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats.mean) }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats.std) }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats.min) }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats["25%"]) }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats["50%"]) }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats["75%"]) }}
+                  </td>
+
+                  <td class="text-right">
+                    {{ formatNumber(stats.max) }}
+                  </td>
+                </tr>
+              </tbody>
+            </q-markup-table>
+          </q-card-section>
+        </template>
+      </q-card>
+      <q-card v-if="isSpreadsheet" flat bordered class="q-mt-md">
+        <q-card-section>
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="auto_awesome" color="primary" size="24px" />
+
+            <div class="text-h6">AI Insights</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <!-- Loading -->
+        <CommonLoadingState v-if="pending" :rows="4" height="100px" />
+
+        <!-- Error -->
+        <q-card-section v-else-if="insightsError">
+          <q-banner rounded class="bg-red-1 text-negative">
+            Failed to load AI insights.
+
+            <template #action>
+              <q-btn
+                flat
+                color="negative"
+                label="Retry"
+                @click="refreshInsights"
+              />
+            </template>
+          </q-banner>
+        </q-card-section>
+
+        <!-- Insights -->
+        <q-card-section v-else-if="insights">
+          <div class="insights-content">
+            {{ insights.insights }}
+          </div>
+        </q-card-section>
+      </q-card>
     </template>
   </q-page>
 </template>
+<style scoped lang="scss">
+.insights-content {
+  white-space: pre-line;
+  line-height: 1.8;
+}
+</style>

@@ -1,18 +1,69 @@
 <script setup lang="ts">
-const api = useApi();
+import LandingFooter from "~/components/landing/LandingFooter.vue";
 
-async function testApi() {
-  try {
-    const result = await api("/documents");
-    console.log("API works:", result);
-  } catch (error) {
-    console.log("API error:", error);
-  }
-}
+definePageMeta({
+  layout: "public",
+});
+
+const authStore = useAuthStore();
 </script>
 
 <template>
-  <q-page class="q-pa-lg">
-    <q-btn label="Test API" color="primary" @click="testApi" />
-  </q-page>
+  <NuxtLayout name="public">
+    <template #header-actions>
+      <div class="row items-center q-gutter-sm">
+        <q-btn
+          v-if="authStore.isAuthenticated"
+          color="primary"
+          unelevated
+          no-caps
+          icon="dashboard"
+          label="Dashboard"
+          to="/dashboard"
+        />
+
+        <template v-else>
+          <q-btn flat no-caps label="Sign in" to="/login" />
+
+          <q-btn
+            color="primary"
+            unelevated
+            no-caps
+            label="Create account"
+            to="/register"
+          />
+        </template>
+      </div>
+    </template>
+
+    <q-page class="landing-page">
+      <LandingHeroSection />
+
+      <LandingSupportedFormats />
+
+      <LandingFeaturesSection />
+
+      <LandingProductShowcase />
+
+      <LandingHowItWorks />
+
+      <LandingSpreadsheetSection />
+
+      <LandingChatCitationsSection />
+
+      <LandingOrganizationSection />
+
+      <LandingSecuritySection />
+
+      <LandingFinalCta />
+
+      <LandingFooter />
+    </q-page>
+  </NuxtLayout>
 </template>
+
+<style scoped>
+.landing-page {
+  background: var(--app-background);
+}
+</style>

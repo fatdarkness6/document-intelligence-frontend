@@ -41,15 +41,50 @@ export interface DocumentListParams {
   per_page?: number;
 }
 
+export interface DocumentSource {
+  chunk_id: number;
+  chunk_index: number;
+  page_number: number | null;
+  preview: string;
+}
+
 export interface DocumentQuestion {
   id: number;
   question: string;
   answer: string;
   created_at: string;
+  sources?: DocumentSource[];
 }
 
 export interface AskDocumentResponse {
-  question: string;
   answer: string;
-  sources?: unknown[];
+  sources: DocumentSource[];
+}
+
+export interface SpreadsheetColumnInfo {
+  name: string;
+  type: string;
+  missing_values: number;
+}
+
+export interface NumericSummary {
+  count: number;
+  mean: number | null;
+  std: number | null;
+  min: number | null;
+  "25%": number | null;
+  "50%": number | null;
+  "75%": number | null;
+  max: number | null;
+}
+
+export interface SpreadsheetAnalysis {
+  rows: number;
+  columns: number;
+  column_info: SpreadsheetColumnInfo[];
+  numeric_summary: Record<string, NumericSummary>;
+}
+
+export interface SpreadsheetInsights {
+  insights: string;
 }

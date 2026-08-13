@@ -56,15 +56,7 @@ const statusColor = computed(() => {
     </q-item-section>
 
     <q-item-section side>
-      <q-chip dense :color="statusColor" text-color="white">
-        <q-spinner
-          v-if="document.status === 'processing'"
-          size="14px"
-          class="q-mr-xs"
-        />
-
-        {{ document.status }}
-      </q-chip>
+      <CommonStatusChip :status="document.status" />
     </q-item-section>
   </q-item>
 </template>
