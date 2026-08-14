@@ -108,6 +108,27 @@ select {
   padding: 96px 0;
 }
 
+.page-enter-active,
+.page-leave-active,
+.layout-enter-active,
+.layout-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.page-enter-from,
+.layout-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-leave-to,
+.layout-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .section-heading {
   max-width: 720px;
   margin-bottom: 48px;

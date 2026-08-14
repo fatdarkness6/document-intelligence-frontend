@@ -1,6 +1,18 @@
 export default defineNuxtConfig({
   modules: ["nuxt-quasar-ui", "@pinia/nuxt"],
 
+  app: {
+    pageTransition: {
+      name: "page",
+      mode: "out-in",
+    },
+
+    layoutTransition: {
+      name: "layout",
+      mode: "out-in",
+    },
+  },
+
   runtimeConfig: {
     public: {
       apiBase: "",
