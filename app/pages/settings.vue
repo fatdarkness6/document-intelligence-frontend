@@ -47,6 +47,7 @@ function confirmLogout() {
               v-model:compact-navigation="compactNavigation"
               v-model:dark-mode="darkMode"
             />
+            <SettingsPasswordCard />
             <SettingsSessionCard @sign-out="confirmLogout" />
           </div>
         </div>

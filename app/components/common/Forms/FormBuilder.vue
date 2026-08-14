@@ -99,6 +99,7 @@
 
           <template v-if="field.type === 'password'" #append>
             <q-btn
+              type="button"
               flat
               round
               dense
