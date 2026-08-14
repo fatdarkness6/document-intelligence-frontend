@@ -630,3 +630,11 @@ Spreadsheet Analysis
 # 📄 License
 
 This project is currently intended for educational, portfolio, and development purposes.
+
+## 👨‍💻 Author
+
+**Arsam**
+
+Full-stack developer focused on modern web development, Python backend engineering, and AI-powered applications.
+
+GitHub: https://github.com/fatdarkness6

@@ -16,7 +16,9 @@ const formats = [
           One workspace for your documents and data
         </div>
 
-        <div class="text-grey-7 q-mt-xs">Upload files up to 20 MB.</div>
+        <div class="supported-description q-mt-xs">
+          Upload files up to 20 MB.
+        </div>
       </div>
 
       <div class="row justify-center q-col-gutter-md">
@@ -42,14 +44,32 @@ const formats = [
   </section>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .supported-section {
   padding: 56px 0;
-  background: white;
+  background: var(--app-surface);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.supported-description {
+  color: var(--app-text-secondary);
 }
 
 .format-card {
   min-width: 145px;
   border-radius: var(--app-radius-md);
+  background: var(--app-surface);
+  border-color: var(--app-border);
+
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.2s ease;
+}
+
+.format-card:hover {
+  transform: translateY(-3px);
 }
 </style>
