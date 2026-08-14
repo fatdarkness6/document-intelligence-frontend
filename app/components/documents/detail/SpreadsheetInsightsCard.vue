@@ -1,8 +1,6 @@
 <script setup lang="ts">
-const props = defineProps<{
-  documentId: number;
-}>();
-
+const props = defineProps<{ documentId: number }>();
+const $q = useQuasar();
 const analysisApi = useDocumentAnalysis();
 
 const {
@@ -18,31 +16,38 @@ const {
 
 <template>
   <q-card flat bordered>
-    <q-card-section>
-      <div class="row items-center q-gutter-sm">
-        <q-icon name="auto_awesome" color="primary" size="24px" />
-        <div class="text-h6">AI Insights</div>
-      </div>
-    </q-card-section>
+    <q-item class="q-pa-lg">
+      <q-item-section avatar>
+        <q-avatar
+          :color="$q.dark.isActive ? 'grey-9' : 'purple-1'"
+          text-color="secondary"
+          icon="auto_awesome"
+        />
+      </q-item-section>
+      <q-item-section>
+        <q-item-label class="text-h6 text-weight-bold">AI Insights</q-item-label>
+        <q-item-label caption>Notable patterns found in the spreadsheet</q-item-label>
+      </q-item-section>
+    </q-item>
 
     <q-separator />
 
-    <CommonLoadingState v-if="pending" :rows="4" height="100px" />
+    <CommonLoadingState v-if="pending" :rows="3" height="70px" />
 
     <q-card-section v-else-if="error">
-      <q-banner rounded class="bg-red-1 text-negative">
+      <q-banner
+        rounded
+        :class="$q.dark.isActive ? 'bg-red-10 text-red-2' : 'bg-red-1 text-negative'"
+      >
         Failed to load AI insights.
-
         <template #action>
-          <q-btn flat color="negative" label="Retry" @click="refresh" />
+          <q-btn flat no-caps color="negative" label="Retry" @click="refresh" />
         </template>
       </q-banner>
     </q-card-section>
 
-    <q-card-section v-else-if="insights">
-      <div class="insights-content">
-        {{ insights.insights }}
-      </div>
+    <q-card-section v-else-if="insights" class="insights-content text-body1 q-pa-lg">
+      {{ insights.insights }}
     </q-card-section>
   </q-card>
 </template>
@@ -50,6 +55,5 @@ const {
 <style scoped>
 .insights-content {
   white-space: pre-line;
-  line-height: 1.8;
 }
 </style>

@@ -6,10 +6,8 @@ const props = defineProps<{
   assignedTags: Tag[];
 }>();
 
-const emit = defineEmits<{
-  updated: [];
-}>();
-
+const emit = defineEmits<{ updated: [] }>();
+const $q = useQuasar();
 const documentsApi = useDocuments();
 const tagsApi = useTags();
 const feedback = useAppFeedback();
@@ -29,12 +27,9 @@ const availableTags = computed(() =>
 
 async function addTag() {
   if (selectedTag.value === null) return;
-
   loading.value = true;
-
   try {
     await documentsApi.addTag(props.documentId, selectedTag.value);
-
     selectedTag.value = null;
     emit("updated");
     feedback.success("Tag added");
@@ -47,10 +42,8 @@ async function addTag() {
 
 async function removeTag(tagId: number) {
   loading.value = true;
-
   try {
     await documentsApi.removeTag(props.documentId, tagId);
-
     emit("updated");
     feedback.success("Tag removed");
   } catch (error) {
@@ -62,11 +55,23 @@ async function removeTag(tagId: number) {
 </script>
 
 <template>
-  <q-card flat bordered class="full-height">
-    <q-card-section>
-      <div class="text-subtitle1 text-weight-medium q-mb-sm">Tags</div>
+  <q-card flat bordered>
+    <q-item>
+      <q-item-section avatar>
+        <q-avatar
+          :color="$q.dark.isActive ? 'grey-9' : 'purple-1'"
+          text-color="secondary"
+          icon="sell"
+        />
+      </q-item-section>
+      <q-item-section>
+        <q-item-label class="text-subtitle1 text-weight-medium">Tags</q-item-label>
+        <q-item-label caption>Label this document for faster discovery</q-item-label>
+      </q-item-section>
+    </q-item>
 
-      <div v-if="assignedTags.length" class="row q-gutter-sm q-mb-md">
+    <q-card-section class="q-pt-none">
+      <div v-if="assignedTags.length" class="row q-gutter-xs q-mb-md">
         <q-chip
           v-for="tag in assignedTags"
           :key="tag.id"
@@ -80,10 +85,18 @@ async function removeTag(tagId: number) {
         </q-chip>
       </div>
 
-      <div v-else class="text-grey-7 q-mb-md">No tags assigned.</div>
+      <q-banner
+        v-else
+        dense
+        rounded
+        :class="$q.dark.isActive ? 'bg-grey-9 text-grey-4' : 'bg-grey-2 text-grey-8'"
+        class="q-mb-md"
+      >
+        No tags assigned yet.
+      </q-banner>
 
       <div class="row q-col-gutter-sm items-center">
-        <div class="col">
+        <div class="col-12 col-sm">
           <q-select
             v-model="selectedTag"
             :options="availableTags"
@@ -93,18 +106,23 @@ async function removeTag(tagId: number) {
             map-options
             outlined
             clearable
-            label="Add tag"
-          />
+            hide-bottom-space
+            label="Add a tag"
+          >
+            <template #prepend><q-icon name="label_outline" /></template>
+          </q-select>
         </div>
 
-        <div class="col-auto">
+        <div class="col-12 col-sm-auto">
           <q-btn
             color="primary"
             icon="add"
-            label="Add"
+            label="Add tag"
+            no-caps
             unelevated
             :disable="selectedTag === null"
             :loading="loading"
+            class="full-width"
             @click="addTag"
           />
         </div>

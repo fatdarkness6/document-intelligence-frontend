@@ -4,10 +4,8 @@ const props = defineProps<{
   folderId: number | null;
 }>();
 
-const emit = defineEmits<{
-  updated: [];
-}>();
-
+const emit = defineEmits<{ updated: [] }>();
+const $q = useQuasar();
 const documentsApi = useDocuments();
 const foldersApi = useFolders();
 const feedback = useAppFeedback();
@@ -28,10 +26,8 @@ watch(
 
 async function updateFolder(folderId: number | null) {
   loading.value = true;
-
   try {
     await documentsApi.moveToFolder(props.documentId, folderId);
-
     emit("updated");
     feedback.success("Folder updated");
   } catch (error) {
@@ -44,10 +40,22 @@ async function updateFolder(folderId: number | null) {
 </script>
 
 <template>
-  <q-card flat bordered class="full-height">
-    <q-card-section>
-      <div class="text-subtitle1 text-weight-medium q-mb-sm">Folder</div>
+  <q-card flat bordered>
+    <q-item>
+      <q-item-section avatar>
+        <q-avatar
+          :color="$q.dark.isActive ? 'grey-9' : 'amber-1'"
+          text-color="amber-9"
+          icon="folder_open"
+        />
+      </q-item-section>
+      <q-item-section>
+        <q-item-label class="text-subtitle1 text-weight-medium">Folder</q-item-label>
+        <q-item-label caption>Choose where this document belongs</q-item-label>
+      </q-item-section>
+    </q-item>
 
+    <q-card-section class="q-pt-none">
       <q-select
         v-model="selectedFolder"
         :options="folders ?? []"
@@ -57,10 +65,13 @@ async function updateFolder(folderId: number | null) {
         map-options
         clearable
         outlined
-        label="Select folder"
+        hide-bottom-space
+        label="Document folder"
         :loading="loading"
         @update:model-value="updateFolder"
-      />
+      >
+        <template #prepend><q-icon name="folder" /></template>
+      </q-select>
     </q-card-section>
   </q-card>
 </template>
