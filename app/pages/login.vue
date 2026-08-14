@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AuthCard from "~/components/auth/AuthCard.vue";
 import { loginSchema } from "~/schemas/auth.schema";
 import { normalizeApiError } from "~/utils/normalizeApiError";
 
@@ -9,8 +10,28 @@ definePageMeta({
 
 const authStore = useAuthStore();
 const $q = useQuasar();
+const route = useRoute();
 
 const loading = ref(false);
+const accountCreated = computed(() => route.query.registered === "1");
+
+const benefits = [
+  {
+    icon: "forum",
+    title: "Continue your conversations",
+    description: "Return to grounded answers and document insights.",
+  },
+  {
+    icon: "folder_open",
+    title: "Everything organized",
+    description: "Access your documents, folders, tags, and summaries.",
+  },
+  {
+    icon: "insights",
+    title: "Insights ready when you are",
+    description: "Pick up your analysis without losing context.",
+  },
+];
 
 async function handleSubmit(values: { email: string; password: string }) {
   loading.value = true;
@@ -34,32 +55,58 @@ async function handleSubmit(values: { email: string; password: string }) {
 </script>
 
 <template>
-  <q-card flat bordered class="full-width q-pa-lg" style="max-width: 420px">
-    <q-card-section>
-      <div class="text-h5 text-weight-bold">Welcome back</div>
+  <AuthCard
+    eyebrow="Welcome back"
+    title="Sign in to your workspace"
+    description="Enter your details to continue working with your documents and AI conversations."
+    panel-title="Your documents are ready for the next question."
+    panel-description="Sign in to keep analyzing, organizing, and turning complex files into useful answers."
+    :benefits="benefits"
+    switch-prompt="New to DocIntel?"
+    switch-label="Create an account"
+    switch-to="/register"
+  >
+    <q-banner
+      v-if="accountCreated"
+      rounded
+      dense
+      :class="
+        $q.dark.isActive
+          ? 'bg-green-10 text-green-2'
+          : 'bg-green-1 text-positive'
+      "
+      class="q-mb-lg"
+    >
+      <template #avatar>
+        <q-icon name="check_circle" color="positive" />
+      </template>
+      Your account is ready. Sign in to continue.
+    </q-banner>
 
-      <div class="text-grey-7 q-mt-xs">Sign in to your account</div>
-    </q-card-section>
-
-    <q-card-section>
-      <CommonFormsFormBuilder
-        :schema="loginSchema"
-        :on-submit="handleSubmit"
-        :input-props="{
-          color: 'primary',
-          class: 'q-mb-sm',
-        }"
+    <CommonFormsFormBuilder
+      :schema="loginSchema"
+      :on-submit="handleSubmit"
+      :input-props="{
+        color: 'primary',
+        class: 'q-mb-sm',
+        hideBottomSpace: false,
+      }"
+    >
+      <q-btn
+        type="submit"
+        label="Sign in"
+        icon-right="arrow_forward"
+        color="primary"
+        unelevated
+        no-caps
+        size="lg"
+        class="full-width q-mt-md"
+        :loading="loading"
       >
-        <q-btn
-          type="submit"
-          label="Sign in"
-          color="primary"
-          unelevated
-          no-caps
-          class="full-width q-mt-md"
-          :loading="loading"
-        />
-      </CommonFormsFormBuilder>
-    </q-card-section>
-  </q-card>
+        <template #loading>
+          <q-spinner-dots />
+        </template>
+      </q-btn>
+    </CommonFormsFormBuilder>
+  </AuthCard>
 </template>

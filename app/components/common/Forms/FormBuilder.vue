@@ -81,8 +81,9 @@
           :model-value="values[key]"
           @update:model-value="setFieldValue(key, $event)"
           :label="field.label"
-          :type="field.type"
-          filled
+          :type="resolvedInputType(String(key), field.type)"
+          :autocomplete="field.autocomplete"
+          outlined
           :error="!!errors[key]"
           :error-message="errors[key]"
           :class="field.class"
@@ -91,7 +92,24 @@
           :style="{
             direction: inputDir(field),
           }"
-        />
+        >
+          <template v-if="field.icon" #prepend>
+            <q-icon :name="field.icon" />
+          </template>
+
+          <template v-if="field.type === 'password'" #append>
+            <q-btn
+              flat
+              round
+              dense
+              :icon="passwordVisibility[String(key)] ? 'visibility_off' : 'visibility'"
+              :aria-label="
+                passwordVisibility[String(key)] ? 'Hide password' : 'Show password'
+              "
+              @click="togglePasswordVisibility(String(key))"
+            />
+          </template>
+        </q-input>
 
         <q-input
           v-else-if="field.type === 'textarea'"
@@ -136,6 +154,16 @@ const { handleSubmit, errors, values, setFieldValue, defineField, resetForm } =
   });
 
 const openSections = reactive<Record<string, boolean>>({});
+const passwordVisibility = reactive<Record<string, boolean>>({});
+
+function resolvedInputType(key: string, type: string) {
+  if (type !== "password") return type;
+  return passwordVisibility[key] ? "text" : "password";
+}
+
+function togglePasswordVisibility(key: string) {
+  passwordVisibility[key] = !passwordVisibility[key];
+}
 
 const inputDir = (field: any) =>
   field?.meta?.direction || props.direction || "ltr";
