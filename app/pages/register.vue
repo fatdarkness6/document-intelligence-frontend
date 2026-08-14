@@ -8,6 +8,13 @@ definePageMeta({
   middleware: "guest",
 });
 
+usePageSeo({
+  title: "Create Account",
+  description:
+    "Create a DocIntel workspace to summarize documents, ask grounded questions, and organize useful insights.",
+  noIndex: true,
+});
+
 const authStore = useAuthStore();
 const $q = useQuasar();
 

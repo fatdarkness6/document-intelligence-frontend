@@ -1,7 +1,12 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-useSeoMeta({ title: "Documents | DocIntel" });
+usePageSeo({
+  title: "Documents",
+  description:
+    "Browse, search, organize, and upload documents in your private DocIntel library.",
+  noIndex: true,
+});
 
 const $q = useQuasar();
 const documentsApi = useDocuments();

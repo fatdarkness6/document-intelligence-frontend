@@ -1,0 +1,17 @@
+{
+  "name": "DocIntel - Document Intelligence",
+  "short_name": "DocIntel",
+  "description": "Analyze documents, ask grounded questions, and organize useful insights.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#4F46E5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

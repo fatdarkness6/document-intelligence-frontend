@@ -4,6 +4,12 @@ import LandingFooter from "~/components/landing/LandingFooter.vue";
 definePageMeta({
   layout: "public",
 });
+
+usePageSeo({
+  title: "AI Document Intelligence",
+  description:
+    "Upload documents, generate clear summaries, ask grounded AI questions, and uncover useful spreadsheet insights with DocIntel.",
+});
 </script>
 
 <template>

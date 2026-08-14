@@ -8,6 +8,13 @@ definePageMeta({
   middleware: "guest",
 });
 
+usePageSeo({
+  title: "Sign In",
+  description:
+    "Sign in to your DocIntel workspace to continue analyzing documents and AI conversations.",
+  noIndex: true,
+});
+
 const authStore = useAuthStore();
 const $q = useQuasar();
 const route = useRoute();

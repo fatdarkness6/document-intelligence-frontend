@@ -1,7 +1,12 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-useSeoMeta({ title: "Settings | DocIntel" });
+usePageSeo({
+  title: "Settings",
+  description:
+    "Manage appearance, navigation, and account preferences for your DocIntel workspace.",
+  noIndex: true,
+});
 
 const $q = useQuasar();
 const authStore = useAuthStore();

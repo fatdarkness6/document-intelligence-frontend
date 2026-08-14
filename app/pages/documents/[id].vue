@@ -32,11 +32,13 @@ const {
   documentsApi.getDocument(documentId),
 );
 
-useSeoMeta({
-  title: () =>
+usePageSeo({
+  title: () => document.value?.filename ?? "Document",
+  description: () =>
     document.value
-      ? `${document.value.filename} | DocIntel`
-      : "Document | DocIntel",
+      ? `Review the summary, AI conversation, and insights for ${document.value.filename}.`
+      : "Review a private document, summary, AI conversation, and insights in DocIntel.",
+  noIndex: true,
 });
 
 const isSpreadsheet = computed(() => {

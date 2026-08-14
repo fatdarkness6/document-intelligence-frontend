@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppBrand from "~/components/common/AppBrand.vue";
+
 const $q = useQuasar();
 const route = useRoute();
 
@@ -93,10 +95,13 @@ watch(
       class="app-shell-surface app-shell-text"
     >
       <div
-        class="q-pa-lg text-h6 text-weight-bold"
-        :class="{ 'text-center q-px-sm': compactNavigation && $q.screen.gt.sm }"
+        class="q-pa-md"
+        :class="{ 'text-center q-px-xs': compactNavigation && $q.screen.gt.sm }"
       >
-        {{ compactNavigation && $q.screen.gt.sm ? "DI" : "DocIntel" }}
+        <AppBrand
+          to="/dashboard"
+          :compact="compactNavigation && $q.screen.gt.sm"
+        />
       </div>
 
       <q-list padding>

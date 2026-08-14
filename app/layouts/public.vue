@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppBrand from "~/components/common/AppBrand.vue";
+
 const authStore = useAuthStore();
 </script>
 
@@ -8,7 +10,7 @@ const authStore = useAuthStore();
       <q-toolbar class="public-toolbar">
         <!-- Left -->
         <div class="header-left">
-          <NuxtLink to="/" class="brand-link"> DocIntel </NuxtLink>
+          <AppBrand />
         </div>
 
         <!-- Center -->
@@ -78,13 +80,6 @@ const authStore = useAuthStore();
 
 .header-right {
   justify-self: end;
-}
-
-.brand-link {
-  color: var(--app-text);
-  text-decoration: none;
-  font-size: 28px;
-  font-weight: 700;
 }
 
 @media (max-width: 1023px) {

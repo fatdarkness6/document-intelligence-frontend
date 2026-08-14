@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppBrand from "~/components/common/AppBrand.vue";
+
 const $q = useQuasar();
 const { darkMode } = useAppPreferences();
 </script>
@@ -11,19 +13,7 @@ const { darkMode } = useAppPreferences();
           :class="$q.screen.lt.sm ? 'q-px-md' : 'q-px-xl'"
           class="q-py-md"
         >
-          <q-btn
-            flat
-            no-caps
-            padding="8px 10px"
-            color="primary"
-            to="/"
-            aria-label="Go to home page"
-          >
-            <q-avatar size="36px" color="primary" text-color="white" icon="description" />
-            <span class="text-h6 text-weight-bold q-ml-sm app-shell-text">
-              DocIntel
-            </span>
-          </q-btn>
+          <AppBrand />
 
           <q-space />
 

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth" });
 
-useSeoMeta({ title: "Dashboard | DocIntel" });
+usePageSeo({
+  title: "Dashboard",
+  description:
+    "Review document activity, processing status, and AI question metrics in your DocIntel workspace.",
+  noIndex: true,
+});
 
 const $q = useQuasar();
 const authStore = useAuthStore();
