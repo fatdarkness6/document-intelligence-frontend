@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Document } from "~/types/document";
+
 definePageMeta({ middleware: "auth" });
 
 usePageSeo({
@@ -12,6 +14,7 @@ const $q = useQuasar();
 const documentsApi = useDocuments();
 const foldersApi = useFolders();
 const tagsApi = useTags();
+const processingStore = useDocumentProcessingStore();
 
 const page = ref(1);
 const perPage = 12;
@@ -25,7 +28,8 @@ const folderManagerOpen = ref(false);
 const tagManagerOpen = ref(false);
 
 let searchTimer: ReturnType<typeof setTimeout>;
-let processingTimer: ReturnType<typeof setInterval> | null = null;
+const subscribedProcessingIds = new Set<number>();
+const handledTerminalUpdates = new Map<number, string | number>();
 
 watch(search, (value) => {
   clearTimeout(searchTimer);
@@ -86,8 +90,6 @@ const favoriteCount = computed(
     documents.value?.items.filter((document) => document.is_favorite).length ?? 0,
 );
 
-const hasProcessingDocuments = computed(() => processingCount.value > 0);
-
 function clearFilters() {
   search.value = "";
   debouncedSearch.value = "";
@@ -102,21 +104,6 @@ function clearSearch() {
   debouncedSearch.value = "";
 }
 
-function stopProcessingPolling() {
-  if (!processingTimer) return;
-  clearInterval(processingTimer);
-  processingTimer = null;
-}
-
-function startProcessingPolling() {
-  if (processingTimer) return;
-
-  processingTimer = setInterval(async () => {
-    await refresh();
-    if (!hasProcessingDocuments.value) stopProcessingPolling();
-  }, 3000);
-}
-
 async function handleFoldersChanged() {
   selectedFolder.value = null;
   await refreshFolders();
@@ -127,23 +114,78 @@ async function handleTagsChanged() {
   await refreshTags();
 }
 
-async function handleUploaded() {
+async function handleUploaded(document: Document) {
+  if (
+    document.status === "processing" &&
+    !subscribedProcessingIds.has(document.id)
+  ) {
+    subscribedProcessingIds.add(document.id);
+    processingStore.subscribe(document.id);
+  }
+
   page.value = 1;
   await refresh();
 }
 
 watch(
-  hasProcessingDocuments,
-  (hasProcessing) => {
-    if (hasProcessing) startProcessingPolling();
-    else stopProcessingPolling();
+  () =>
+    documents.value?.items
+      .filter((document) => document.status === "processing")
+      .map((document) => document.id) ?? [],
+  (processingIds) => {
+    const nextIds = new Set(processingIds);
+
+    for (const documentId of subscribedProcessingIds) {
+      if (nextIds.has(documentId)) continue;
+      processingStore.unsubscribe(documentId);
+      subscribedProcessingIds.delete(documentId);
+    }
+
+    for (const documentId of nextIds) {
+      if (subscribedProcessingIds.has(documentId)) continue;
+      subscribedProcessingIds.add(documentId);
+      processingStore.subscribe(documentId);
+    }
   },
   { immediate: true },
 );
 
+watch(
+  () => processingStore.updates,
+  async (updates) => {
+    let shouldRefresh = false;
+
+    for (const document of documents.value?.items ?? []) {
+      const update = updates[document.id];
+      if (!update) continue;
+
+      document.status = update.status;
+
+      if (update.status === "processing") {
+        handledTerminalUpdates.delete(document.id);
+        continue;
+      }
+
+      const marker = update.event_id ?? update.received_at;
+      if (handledTerminalUpdates.get(document.id) === marker) continue;
+
+      handledTerminalUpdates.set(document.id, marker);
+      shouldRefresh = true;
+    }
+
+    if (shouldRefresh) await refresh();
+  },
+  { deep: true },
+);
+
 onBeforeUnmount(() => {
   clearTimeout(searchTimer);
-  stopProcessingPolling();
+
+  for (const documentId of subscribedProcessingIds) {
+    processingStore.unsubscribe(documentId);
+  }
+
+  subscribedProcessingIds.clear();
 });
 </script>
 

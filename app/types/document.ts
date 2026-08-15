@@ -13,6 +13,34 @@ export interface DocumentStats {
 
 export type DocumentStatus = "processing" | "completed" | "failed";
 
+export type DocumentStatusEventName =
+  | "status"
+  | "completed"
+  | "failed";
+
+export type DocumentStreamConnectionState =
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "waiting-for-network"
+  | "error";
+
+export interface DocumentStatusEventPayload {
+  document_id: number;
+  status: DocumentStatus;
+  stage: string;
+  progress?: number | null;
+  message: string;
+  updated_at: string;
+}
+
+export interface DocumentProcessingUpdate
+  extends DocumentStatusEventPayload {
+  event: DocumentStatusEventName;
+  event_id?: string;
+  received_at: number;
+}
+
 export interface Document {
   id: number;
   filename: string;

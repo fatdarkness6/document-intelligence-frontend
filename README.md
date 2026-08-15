@@ -1,31 +1,24 @@
-# 📄 AI Document Intelligence Platform — Frontend
+# 📄 DocIntel — AI Document Intelligence Frontend
 
-A modern AI-powered document intelligence application built with **Nuxt, TypeScript, Quasar, and FastAPI**.
+DocIntel is a responsive document-intelligence application for uploading files, generating AI summaries, chatting with document content, analyzing spreadsheets, organizing a document library, and downloading reports.
 
-The platform allows users to upload documents, generate AI summaries, chat with their files, analyze spreadsheets, organize documents, and generate downloadable reports.
-
-This repository contains the **frontend application**.
-
----
+This repository contains the frontend, built with **Nuxt 4, Vue 3, TypeScript, Quasar, and Pinia**. It communicates with a separate **FastAPI** backend.
 
 ## ✨ Features
 
-### 🔐 Authentication
+### Authentication and security
 
-- User registration
-- User login
-- JWT-based authentication
+- Registration and login
+- JWT bearer authentication
 - Persistent authentication using cookies
-- Protected routes
-- Automatic user restoration with `/auth/me`
-- Guest/auth middleware
-- Logout support
+- Protected and guest-only routes
+- Automatic user restoration through `/auth/me`
+- Password changes from the settings page
+- Automatic logout and redirection when authentication expires
 
----
+### Document management
 
-### 📄 Document Management
-
-Users can upload and manage:
+Supported formats:
 
 - PDF
 - DOCX
@@ -33,79 +26,46 @@ Users can upload and manage:
 - CSV
 - XLSX
 
-Maximum upload size:
+The current maximum upload size is **20 MB**.
 
-```text
-20 MB
-```
+Users can:
 
-Document functionality includes:
+- Upload, search, rename, and delete documents
+- Paginate and filter the document library
+- Mark documents as favorites
+- Organize documents with folders and tags
+- Reprocess completed or failed documents
+- Download generated PDF reports
+- See processing, completed, and failed states
+- Receive real-time processing stage, message, and progress updates
 
-- Upload documents
-- Search documents
-- Pagination
-- Rename documents
-- Delete documents
-- Favorite documents
-- Reprocess failed or completed documents
-- Filter by folders
-- Filter by tags
-- Processing / completed / failed states
+### Real-time processing status
 
----
+Document processing uses authenticated Server-Sent Events instead of repeatedly polling the document-detail endpoint.
 
-### 🤖 AI Document Summaries
+- One shared SSE connection per active document
+- Bearer token sent through the `Authorization` header
+- Immediate durable status snapshot after connecting
+- Support for `status`, `completed`, `failed`, and `ping` events
+- `Last-Event-ID` reconnection and duplicate-event protection
+- Bounded exponential reconnection with offline recovery
+- One document-detail request as a fallback when the stream fails
+- Automatic cleanup when pages unmount or the user logs out
 
-Uploaded documents are processed by the backend and summarized using an LLM.
+See [Real-Time Document Processing](#-real-time-document-processing) for the endpoint contract.
 
-The frontend provides:
+### AI summaries and document chat
 
 - AI-generated summaries
-- Processing indicators
-- Automatic polling while documents are being processed
-- Failed-processing states
-- Reprocessing controls
-
----
-
-### 💬 Chat With Documents
-
-Users can ask questions about uploaded documents.
-
-The application supports:
-
-- Question/answer history
+- Question and answer history
+- Immediate display of newly sent questions
+- Smooth, scrollable Quasar chat interface
 - Conversational follow-up questions
-- AI response loading states
-- Quasar chat interface
 - Semantic document retrieval
-- Source previews
-- PDF page citations
+- Source previews and PDF page citations
+- Loading and error states
 
-Example:
-
-```text
-User:
-Which database index would be most efficient?
-
-AI:
-A composite B-tree index would typically be effective...
-
-Sources:
-Page 9
-Page 19
-Page 1
-```
-
-The backend uses a basic **RAG pipeline with pgvector** to retrieve relevant document chunks before generating answers.
-
----
-
-### 🔎 Semantic Retrieval
-
-Document questions are not answered using the entire document blindly.
-
-The backend:
+The backend uses a RAG pipeline with pgvector to retrieve relevant chunks before generating a grounded answer.
 
 ```text
 Question
@@ -118,425 +78,334 @@ Relevant document chunks
    ↓
 LLM
    ↓
-Grounded answer
+Grounded answer with sources
 ```
 
-The frontend displays returned sources and page numbers when available.
+### Spreadsheet intelligence
 
----
+CSV and XLSX documents can display:
 
-### 📊 Spreadsheet Intelligence
-
-CSV and Excel documents receive additional analysis.
-
-The frontend displays:
-
-- Number of rows
-- Number of columns
-- Column names
-- Data types
+- Row and column counts
+- Column names and data types
 - Missing values
-- Numeric statistics
-- Mean
-- Standard deviation
-- Minimum / maximum
-- Quartiles
-- AI-generated insights
+- Mean and standard deviation
+- Minimum, maximum, and quartiles
+- AI-generated spreadsheet insights
 
-Spreadsheet analysis is powered by **Pandas** on the backend.
+Spreadsheet analysis is performed by the backend using Pandas.
 
----
+### Folders, tags, and favorites
 
-### 📁 Folders & Tags
+- Create, rename, and delete folders
+- Move documents into or out of folders
+- Create, rename, and delete tags
+- Assign multiple tags to a document
+- Filter by folder, tag, or favorite status
 
-Documents can be organized using:
+### Dashboard
 
-#### Folders
-
-- Create folder
-- Rename folder
-- Delete folder
-- Move documents between folders
-- Remove a document from a folder
-- Filter documents by folder
-
-#### Tags
-
-- Create tags
-- Rename tags
-- Delete tags
-- Add multiple tags to documents
-- Remove tags
-- Filter documents by tag
-
----
-
-### ⭐ Favorites
-
-Users can mark documents as favorites and quickly filter the document library.
-
----
-
-### 📑 PDF Reports
-
-Users can download generated PDF reports containing information such as:
-
-- Document name
-- AI summary
-- Spreadsheet insights when applicable
-
-Reports are generated by the FastAPI backend and downloaded as blobs by the frontend.
-
----
-
-### 📈 Dashboard
-
-The authenticated dashboard displays information including:
+The responsive dashboard summarizes:
 
 - Total documents
-- PDF documents
-- Spreadsheet documents
+- PDF, DOCX, text, and spreadsheet documents
+- Processing and failed documents
 - Total questions asked
-- Processing documents
-- Failed documents
+- Recent workspace activity
 
----
+### Settings and appearance
 
-### 🌐 Public Landing Page
+- Account information
+- Password change form using the shared form builder and Yup validation
+- Persistent light and dark modes powered by Quasar
+- Compact navigation preference
+- Session and logout controls
 
-The application also includes a responsive public landing page explaining the platform.
+### Public pages and metadata
 
-Sections include:
+- Responsive public landing page
+- Login and registration pages linked to each other
+- Per-page titles and descriptions
+- Open Graph site metadata
+- Theme and color-scheme metadata
+- SVG favicon and web app manifest
+- Smooth landing-page navigation powered by Lenis
 
-- Hero
-- Supported formats
-- Core features
-- Product showcase
-- How it works
-- Spreadsheet intelligence
-- AI chat and citations
-- Organization features
-- Security overview
-- Call to action
-- Footer
+## 🛠️ Tech Stack
 
-Navigation includes smooth scrolling powered by **Lenis**.
+### Frontend
 
----
-
-# 🛠️ Tech Stack
-
-## Frontend
-
-- Nuxt
-- Vue
+- Nuxt 4
+- Vue 3
 - TypeScript
-- Quasar
+- Quasar 2 and Material Icons
 - Pinia
-- vee-validate
-- Yup
+- vee-validate and Yup
 - Nuxt `$fetch`
+- Fetch Streams API for authenticated SSE
 - Lenis
 - SCSS
+- Inter and Vazirmatn variable fonts
 
-## Backend
+### Backend integration
 
-The frontend communicates with a separate backend built using:
+The separate backend uses technologies including:
 
-- Python
-- FastAPI
-- PostgreSQL
-- SQLAlchemy
-- Alembic
-- Pydantic
+- Python and FastAPI
+- PostgreSQL, SQLAlchemy, and Alembic
 - pgvector
 - Pandas
 - OpenAI API
 - ReportLab
 
----
-
-# 🧠 AI Architecture
-
-The document intelligence workflow is approximately:
+## 🧠 Application Workflow
 
 ```text
 Document Upload
       ↓
-FastAPI
+FastAPI processing pipeline
       ↓
-Text Extraction
+Text extraction / spreadsheet analysis
       ↓
-Text Chunking
-      ↓
-Embedding Generation
+Chunking and embedding generation
       ↓
 PostgreSQL + pgvector
       ↓
-Semantic Retrieval
+Summary, insights, and grounded answers
       ↓
-LLM
-      ↓
-Summary / Answer
-      ↓
-Nuxt Frontend
+Nuxt frontend
 ```
 
-For spreadsheet files:
-
-```text
-CSV / XLSX
-     ↓
-Pandas
-     ↓
-Statistics
-     ↓
-AI Insights
-     ↓
-Frontend Analysis UI
-```
-
----
-
-# 🏗️ Frontend Architecture
-
-The frontend uses a centralized API architecture:
+Normal API requests follow a centralized path:
 
 ```text
 Pages / Components
         ↓
-Feature Composables
+Feature composables
         ↓
 useApi()
         ↓
-$fetch
+Configured $fetch client
         ↓
 FastAPI
 ```
 
-Examples:
+Long-running processing updates use:
 
 ```text
-useDocuments()
-useDocumentChat()
-useDocumentAnalysis()
-useFolders()
-useTags()
+Document list / detail page
+            ↓
+useDocumentProcessingStore()
+            ↓
+useDocumentStatusStream()
+            ↓
+Authenticated fetch + SSE parser
+            ↓
+GET /documents/{id}/events
 ```
 
-API URLs and authentication logic are not scattered throughout components.
+The Pinia processing store reference-counts page subscribers, allowing multiple views to share one connection for a document. API URLs, authorization logic, stream parsing, and reconnection behavior remain outside UI components.
 
----
-
-# 📂 Project Structure
+## 📂 Project Structure
 
 ```text
 app/
 ├── assets/
 │   └── styles/
-│
 ├── components/
-│   ├── common/
 │   ├── auth/
+│   ├── common/
 │   ├── dashboard/
 │   ├── documents/
 │   ├── folders/
-│   ├── tags/
-│   └── landing/
-│
+│   ├── landing/
+│   ├── settings/
+│   └── tags/
 ├── composables/
 │   ├── useApi.ts
-│   ├── useDocuments.ts
-│   ├── useDocumentChat.ts
+│   ├── useAppFeedback.ts
+│   ├── useAppPreferences.ts
+│   ├── useAuthSecurity.ts
 │   ├── useDocumentAnalysis.ts
+│   ├── useDocumentChat.ts
+│   ├── useDocuments.ts
+│   ├── useDocumentStatusStream.ts
 │   ├── useFolders.ts
+│   ├── usePageSeo.ts
 │   └── useTags.ts
-│
 ├── layouts/
-│   ├── default.vue
 │   ├── auth.vue
+│   ├── default.vue
 │   └── public.vue
-│
 ├── middleware/
 │   ├── auth.ts
 │   └── guest.ts
-│
 ├── pages/
+│   ├── documents/
+│   │   ├── [id].vue
+│   │   └── index.vue
+│   ├── dashboard.vue
 │   ├── index.vue
 │   ├── login.vue
 │   ├── register.vue
-│   ├── dashboard.vue
-│   └── documents/
-│
+│   └── settings.vue
 ├── plugins/
 │   ├── api.ts
 │   ├── auth-init.ts
-│   └── lenis.client.ts
-│
+│   ├── lenis.client.ts
+│   └── theme.ts
 ├── schemas/
-│
+│   ├── auth.schema.ts
+│   └── security.schema.ts
 ├── stores/
-│   └── auth.ts
-│
+│   ├── auth.ts
+│   └── documentProcessing.ts
 ├── types/
-│
 └── utils/
+    ├── normalizeApiError.ts
+    └── parseSseStream.ts
 ```
 
----
+## 🚀 Getting Started
 
-# 🚀 Getting Started
+### Prerequisites
 
-## 1. Clone the repository
+- Node.js 20 or newer
+- npm
+- A running DocIntel backend
+
+### 1. Clone the repository
 
 ```bash
 git clone YOUR_REPOSITORY_URL
+cd document-intelligence-frontend
 ```
 
-Then:
-
-```bash
-cd YOUR_REPOSITORY_NAME
-```
-
----
-
-## 2. Install dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
----
+### 3. Configure the API
 
-## 3. Configure environment variables
-
-Create:
-
-```text
-.env
-```
-
-Add:
+Create a `.env` file in the project root:
 
 ```env
 NUXT_PUBLIC_API_BASE=http://127.0.0.1:8000/api/v1
 ```
 
-The backend must be running separately.
+The API base must include the backend version prefix, such as `/api/v1`.
 
----
-
-## 4. Start the development server
+### 4. Start development
 
 ```bash
 npm run dev
 ```
 
-The application will normally be available at:
+The application is normally available at [http://localhost:3000](http://localhost:3000).
 
-```text
-http://localhost:3000
+### 5. Build and preview
+
+```bash
+npm run build
+npm run preview
 ```
 
----
+Other available command:
 
-# 🔌 Backend API
-
-Development backend:
-
-```text
-http://127.0.0.1:8000/api/v1
+```bash
+npm run generate
 ```
 
-FastAPI Swagger:
+## 🔌 Backend API
+
+Default development URLs:
 
 ```text
-http://127.0.0.1:8000/docs
+API:     http://127.0.0.1:8000/api/v1
+Swagger: http://127.0.0.1:8000/docs
 ```
 
-The frontend communicates directly with FastAPI using a centralized `$fetch` client.
-
-Authenticated requests automatically include:
+Protected requests automatically include:
 
 ```http
 Authorization: Bearer ACCESS_TOKEN
 ```
 
----
-
-# 🔐 Authentication Flow
-
 Login uses FastAPI's OAuth2 form format:
 
-```text
+```http
 POST /auth/login
-
-Content-Type:
-application/x-www-form-urlencoded
+Content-Type: application/x-www-form-urlencoded
 ```
 
-The email is sent as:
+The email is sent in the `username` field. After login, the frontend stores the access token, retrieves the user through `GET /auth/me`, and redirects to the dashboard.
+
+Password changes use:
+
+```http
+POST /auth/change-password
+Content-Type: application/json
+```
+
+```json
+{
+  "current_password": "current password",
+  "new_password": "new password"
+}
+```
+
+## 📡 Real-Time Document Processing
+
+While a document is processing, the frontend subscribes to:
+
+```http
+GET /documents/{document_id}/events
+Accept: text/event-stream
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Native `EventSource` is not used because it cannot attach the required bearer header. The dependency-free client uses `fetch`, `ReadableStream`, and a small SSE frame parser.
+
+Supported events:
+
+- `status` — queued or in-progress state
+- `completed` — successful terminal state; the server closes the stream
+- `failed` — safe terminal failure state; the server closes the stream
+- `ping` — heartbeat ignored by the UI
+
+Status payloads contain:
+
+```json
+{
+  "document_id": 42,
+  "status": "processing",
+  "stage": "generating_summary",
+  "progress": 70,
+  "message": "Generating document summary",
+  "updated_at": "2026-08-15T10:30:00Z"
+}
+```
+
+On reconnect, the client sends `Last-Event-ID` when available and ignores events it has already handled. If the stream cannot be established, one document-detail request is used as a fallback; the former continuous three-second polling loop has been removed.
+
+## 📱 UI and Responsive Design
+
+The app follows a Quasar-first approach:
 
 ```text
-username=user@example.com
+Quasar components
+       +
+Quasar grid and responsive utilities
+       +
+Application design tokens
+       +
+Small custom SCSS layer
 ```
 
-After successful authentication:
+Commonly used Quasar building blocks include `QLayout`, `QHeader`, `QDrawer`, `QPage`, `QCard`, `QDialog`, `QChatMessage`, `QFile`, `QSelect`, and `QPagination`.
 
-```text
-Login
-  ↓
-Receive JWT
-  ↓
-Store access token
-  ↓
-GET /auth/me
-  ↓
-Store authenticated user
-  ↓
-Dashboard
-```
-
----
-
-# 📱 Responsive Design
-
-The UI is primarily built using **Quasar's responsive system**, including:
-
-- `QLayout`
-- `QHeader`
-- `QDrawer`
-- `QPage`
-- `QCard`
-- `QDialog`
-- `QMenu`
-- `QChatMessage`
-- `QFile`
-- `QSelect`
-- `QPagination`
-- Quasar grid utilities
-- Quasar responsive helpers
-
-Custom CSS is used only where application-specific styling is required.
-
----
-
-# 🎨 UI Architecture
-
-The application follows a Quasar-first design approach.
-
-```text
-Quasar Components
-       +
-Quasar Grid / Utilities
-       +
-Application Design Tokens
-       +
-Small Custom SCSS Layer
-```
-
-Design tokens include:
+Application colors and surfaces are exposed through reusable CSS variables, including:
 
 ```css
 --app-background
@@ -550,84 +419,45 @@ Design tokens include:
 --app-radius-lg
 ```
 
----
+## 🔒 Security Notes
 
-# 🔒 Security
+- Protected frontend routes require authentication.
+- Protected API and SSE requests send bearer authorization headers.
+- The SSE token is never placed in the URL.
+- Invalid authentication clears the frontend session.
+- The backend is responsible for ownership validation and returns safe authorization errors.
+- Inaccessible and unknown document streams should both return `404` to avoid leaking document existence.
 
-The current MVP includes:
-
-- JWT authentication
-- Protected frontend routes
-- User-specific backend document access
-- Authorization headers on protected API calls
-- Backend ownership validation for documents
-- Backend ownership validation for folders and tags
-- Physical file cleanup when documents are deleted
-
----
-
-# 🚧 Future Improvements
-
-Potential future additions include:
+## 🚧 Possible Future Improvements
 
 - Multi-document knowledge bases
-- Streaming AI responses
-- Advanced RAG
-- Reranking
-- More advanced semantic search
-- Cloud/object storage
+- Streaming AI answer tokens
+- Advanced RAG and reranking
+- Cloud or object storage
 - Redis caching
-- Background workers
 - Advanced spreadsheet visualizations
-- Saved AI conversations
+- Saved or shared AI conversations
 - Shared workspaces
 - More advanced document search
-- Optimistic frontend updates
+- Automated unit and end-to-end tests
 
-These are intentionally outside the current MVP.
+## 🎯 Project Goal
 
----
+DocIntel demonstrates a complete workflow that combines modern frontend engineering, Python backend development, document processing, relational and vector databases, AI-assisted analysis, and responsive product design.
 
-# 🎯 Project Goal
+## 📸 Screenshots
 
-This project was built to explore and demonstrate practical integration between:
+Screenshots can be added for:
 
-```text
-Modern Frontend Development
-+
-Python Backend Engineering
-+
-Document Processing
-+
-Relational Databases
-+
-Vector Search
-+
-AI / LLM Integration
-+
-Data Analysis
-```
+- Landing page
+- Login and registration
+- Dashboard
+- Document library
+- Document detail and AI chat
+- Spreadsheet analysis
+- Settings and dark mode
 
-Rather than being a simple AI wrapper, the project focuses on building a complete document workflow around AI-generated results.
-
----
-
-# 📸 Screenshots
-
-Screenshots and demonstrations will be added as the UI is finalized.
-
-```text
-Landing Page
-Dashboard
-Document Library
-Document Detail
-AI Document Chat
-Spreadsheet Analysis
-```
-
----
-
-# 📄 License
+## 📄 License
 
 This project is currently intended for educational, portfolio, and development purposes.
 
@@ -637,4 +467,4 @@ This project is currently intended for educational, portfolio, and development p
 
 Full-stack developer focused on modern web development, Python backend engineering, and AI-powered applications.
 
-GitHub: https://github.com/fatdarkness6
+GitHub: [fatdarkness6](https://github.com/fatdarkness6)

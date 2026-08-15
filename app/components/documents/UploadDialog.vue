@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { Document } from "~/types/document";
+
 const model = defineModel<boolean>();
 
 const emit = defineEmits<{
-  uploaded: [];
+  uploaded: [document: Document];
 }>();
 
 const documentsApi = useDocuments();
@@ -40,14 +42,14 @@ async function upload() {
   loading.value = true;
 
   try {
-    await documentsApi.uploadDocument(file.value);
+    const document = await documentsApi.uploadDocument(file.value);
 
     feedback.success("Document uploaded successfully");
 
     file.value = null;
     model.value = false;
 
-    emit("uploaded");
+    emit("uploaded", document);
   } catch (error) {
     const apiError = normalizeApiError(error);
 

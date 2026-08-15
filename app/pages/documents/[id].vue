@@ -12,6 +12,7 @@ definePageMeta({ middleware: "auth" });
 const $q = useQuasar();
 const route = useRoute();
 const documentsApi = useDocuments();
+const processingStore = useDocumentProcessingStore();
 const activeTab = ref("overview");
 
 const documentId = Number(route.params.id);
@@ -46,33 +47,60 @@ const isSpreadsheet = computed(() => {
   return fileType === "csv" || fileType === "xlsx";
 });
 
-let processingTimer: ReturnType<typeof setInterval> | null = null;
+const processingUpdate = computed(
+  () => processingStore.updates[documentId],
+);
+const streamConnectionState = computed(
+  () => processingStore.connectionStates[documentId],
+);
+const processingProgress = computed(() => {
+  const progress = processingUpdate.value?.progress;
+  if (typeof progress !== "number") return null;
+  return Math.min(100, Math.max(0, progress));
+});
 
-function stopProcessingPolling() {
-  if (!processingTimer) return;
-  clearInterval(processingTimer);
-  processingTimer = null;
-}
-
-function startProcessingPolling() {
-  if (!import.meta.client || processingTimer) return;
-
-  processingTimer = setInterval(async () => {
-    await refresh();
-    if (document.value?.status !== "processing") stopProcessingPolling();
-  }, 3000);
-}
+let subscribedToProcessing = false;
+let handledTerminalUpdate: string | number | undefined;
 
 watch(
   () => document.value?.status,
   (status) => {
-    if (status === "processing") startProcessingPolling();
-    else stopProcessingPolling();
+    if (status === "processing" && !subscribedToProcessing) {
+      subscribedToProcessing = true;
+      processingStore.subscribe(documentId);
+      return;
+    }
+
+    if (status !== "processing" && subscribedToProcessing) {
+      subscribedToProcessing = false;
+      processingStore.unsubscribe(documentId);
+    }
   },
   { immediate: true },
 );
 
-onBeforeUnmount(stopProcessingPolling);
+watch(processingUpdate, async (update) => {
+  if (!update || !document.value) return;
+
+  document.value.status = update.status;
+
+  if (update.status === "processing") {
+    handledTerminalUpdate = undefined;
+    return;
+  }
+
+  const marker = update.event_id ?? update.received_at;
+  if (handledTerminalUpdate === marker) return;
+
+  handledTerminalUpdate = marker;
+  await refresh();
+});
+
+onBeforeUnmount(() => {
+  if (subscribedToProcessing) {
+    processingStore.unsubscribe(documentId);
+  }
+});
 </script>
 
 <template>
@@ -117,10 +145,40 @@ onBeforeUnmount(stopProcessingPolling);
           class="q-mt-md"
         >
           <template #avatar><q-spinner color="primary" size="26px" /></template>
-          <div class="text-weight-medium">Document processing is in progress</div>
+          <div class="row items-center q-gutter-sm">
+            <div class="text-weight-medium">
+              {{ processingUpdate?.message || "Document processing is in progress" }}
+            </div>
+            <q-badge
+              v-if="processingUpdate?.stage"
+              outline
+              color="primary"
+              :label="processingUpdate.stage.replaceAll('_', ' ')"
+            />
+          </div>
           <div class="text-caption">
             Summary and AI chat will become available automatically when it is ready.
           </div>
+          <q-linear-progress
+            v-if="processingProgress !== null"
+            rounded
+            size="8px"
+            color="primary"
+            track-color="blue-2"
+            :value="processingProgress / 100"
+            class="q-mt-sm"
+          />
+
+          <template v-if="streamConnectionState === 'error'" #action>
+            <q-btn
+              flat
+              no-caps
+              color="primary"
+              icon="sync_problem"
+              label="Reconnect"
+              @click="processingStore.retry(documentId)"
+            />
+          </template>
         </q-banner>
 
         <q-banner
