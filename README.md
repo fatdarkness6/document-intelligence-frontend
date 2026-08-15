@@ -276,7 +276,7 @@ app/
 ### 1. Clone the repository
 
 ```bash
-git clone YOUR_REPOSITORY_URL
+git clone https://github.com/fatdarkness6/docintel-frontend.git
 cd document-intelligence-frontend
 ```
 
