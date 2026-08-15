@@ -99,6 +99,34 @@ select {
   color: var(--app-text-secondary);
 }
 
+.app-navigation-loading {
+  .q-loading__backdrop {
+    background: color-mix(in srgb, var(--app-background) 78%, transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  &__box {
+    min-width: min(280px, calc(100vw - 32px));
+    padding: 24px 30px;
+    color: var(--app-text);
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-lg);
+    box-shadow: 0 18px 50px rgb(16 24 40 / 18%);
+
+    .q-loading__message {
+      margin-top: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+  }
+}
+
+.body--dark .app-navigation-loading__box {
+  box-shadow: 0 18px 54px rgb(0 0 0 / 45%);
+}
+
 .landing-container {
   width: min(1280px, calc(100% - 48px));
   margin-inline: auto;

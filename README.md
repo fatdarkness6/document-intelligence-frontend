@@ -405,6 +405,8 @@ Small custom SCSS layer
 
 Commonly used Quasar building blocks include `QLayout`, `QHeader`, `QDrawer`, `QPage`, `QCard`, `QDialog`, `QChatMessage`, `QFile`, `QSelect`, and `QPagination`.
 
+A global Quasar loading overlay provides route-specific feedback while destination-page async data is resolving. A short display delay prevents flicker on fast navigations.
+
 Application colors and surfaces are exposed through reusable CSS variables, including:
 
 ```css
