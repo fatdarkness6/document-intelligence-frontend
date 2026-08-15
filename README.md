@@ -465,6 +465,6 @@ This project is currently intended for educational, portfolio, and development p
 
 **Arsam**
 
-Full-stack developer focused on modern web development, Python backend engineering, and AI-powered applications.
+Full-stack Engineer focused on modern web development, Python backend engineering, and AI-powered applications.
 
 GitHub: [fatdarkness6](https://github.com/fatdarkness6)
